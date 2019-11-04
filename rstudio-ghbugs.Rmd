@@ -11,21 +11,36 @@ source("gh-util.R")
 
 ```{r}
 issues <- gh_all("/repos/rstudio/rstudio/issues?assignee=*&state=all")
+message("Read ", length(issues), " issues")
 ```
 
 ```{r}
+extract_gh_date <- function(issue, field) {
+  date <- issue[[field]]
+  if (is.null(date))
+    NA
+  else
+    date
+}
+
 allbugs <- data.frame(
-  created = as.Date(unlist(lapply(issues, `[[`, "created_at"))),
+  id = unlist(lapply(issues, `[[`, "number")),
+  created = as.Date(unlist(lapply(issues, extract_gh_date, "created_at"))),
+  closed = as.Date(unlist(lapply(issues, extract_gh_date, "closed_at"))),
   stringsAsFactors = FALSE
 )
 ```
 
 ```{r}
 ggplot(allbugs, aes(x = created)) +
-  geom_histogram(binwidth = 7) +
+  geom_histogram() +
   xlab("Date created") +
-  ylab("Number of issues")
+  ylab("Number of issues") +
   ggtitle("New issues over time")
+```
+
+```{r}
+
 ```
 
 
