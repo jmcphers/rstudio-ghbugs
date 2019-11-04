@@ -1,0 +1,31 @@
+---
+title: "RStudio Bugs"
+output: html_notebook
+---
+
+```{r setup}
+library(gh)
+library(ggplot2)
+source("gh-util.R")
+```
+
+```{r}
+issues <- gh_all("/repos/rstudio/rstudio/issues?assignee=*&state=all")
+```
+
+```{r}
+allbugs <- data.frame(
+  created = as.Date(unlist(lapply(issues, `[[`, "created_at"))),
+  stringsAsFactors = FALSE
+)
+```
+
+```{r}
+ggplot(allbugs, aes(x = created)) +
+  geom_histogram(binwidth = 7) +
+  xlab("Date created") +
+  ylab("Number of issues")
+  ggtitle("New issues over time")
+```
+
+
