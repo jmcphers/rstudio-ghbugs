@@ -10,30 +10,33 @@ source("gh-util.R")
 ```
 
 ```{r}
-issues <- gh_all("/repos/rstudio/rstudio/issues?assignee=*&state=all")
+issues <- gh_all("/repos/rstudio/rstudio/issues", 
+  filter = "all",
+  state = "all",
+  since = "2016-01-01T12:00:00",
+  direction = "asc")
 message("Read ", length(issues), " issues")
 ```
 
 ```{r}
-extract_gh_date <- function(issue, field) {
-  date <- issue[[field]]
-  if (is.null(date))
-    NA
-  else
-    date
-}
-
-allbugs <- data.frame(
+allissues <- data.frame(
   id = unlist(lapply(issues, `[[`, "number")),
   created = as.Date(unlist(lapply(issues, extract_gh_date, "created_at"))),
   closed = as.Date(unlist(lapply(issues, extract_gh_date, "closed_at"))),
+  pull = unlist(lapply(issues, extract_gh_pr, "pull_request")),
   stringsAsFactors = FALSE
 )
+
+# Remove the first issue from the data set. It's a rogue which keeps
+# getting "updated".
+allissues <- allissues[allissues$id > 10, ]
+
+allbugs <- allissues[is.na(allissues$pull), ]
 ```
 
 ```{r}
 ggplot(allbugs, aes(x = created)) +
-  geom_histogram() +
+  geom_histogram(binwidth = 7) +
   xlab("Date created") +
   ylab("Number of issues") +
   ggtitle("New issues over time")

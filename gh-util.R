@@ -1,7 +1,8 @@
 
-gh_all <- function(q) {
+# Retrieves all GitHub results for a given query, using pagination.
+gh_all <- function(q, ...) {
   message("Retrieving ", q, " .", appendLF = FALSE)
-  all <- gh::gh(q)
+  all <- gh::gh(q, ...)
   page <- all
   more <- TRUE
   total <- 1
@@ -22,5 +23,22 @@ gh_all <- function(q) {
   message(" OK (", total, " pages)")
   
   all
+}
+
+# Extracts a date field from a Github issue
+extract_gh_date <- function(issue, field) {
+  date <- issue[[field]]
+  if (is.null(date))
+    NA
+  else
+    date
+}
+
+extract_gh_pr <- function(issue, field) {
+  pr <- issue[[field]]
+  if (is.null(pr))
+    NA
+  else 
+    pr$url 
 }
 
