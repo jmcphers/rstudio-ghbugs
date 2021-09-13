@@ -24,18 +24,26 @@ allissues <- data.frame(
   created = as.Date(unlist(lapply(issues, extract_gh_date, "created_at"))),
   closed = as.Date(unlist(lapply(issues, extract_gh_date, "closed_at"))),
   pull = unlist(lapply(issues, extract_gh_pr, "pull_request")),
+  state = unlist(lapply(issues, `[[`, "state")),
+  type = unlist(lapply(issues, extract_gh_type, "labels")),
   stringsAsFactors = FALSE
 )
 
-# Remove the first issue from the data set. It's a rogue which keeps
-# getting "updated".
+# Remove the first 10 issues, which were filed before the GH issues page
+# was closed and consequently skew the date ranges dramatically.
 allissues <- allissues[allissues$id > 10, ]
 
+# Record the age of an issue
+allissues <- cbind(allissues, data.frame(
+   age = allissues$closed - allissues$created
+))
+
+# Remove all the pull requests from the list
 allbugs <- allissues[is.na(allissues$pull), ]
 ```
 
 ```{r}
-ggplot(allbugs, aes(x = created)) +
+ggplot(allbugs, aes(x = created, fill = state)) +
   geom_histogram(binwidth = 7) +
   xlab("Date created") +
   ylab("Number of issues") +
@@ -43,7 +51,44 @@ ggplot(allbugs, aes(x = created)) +
 ```
 
 ```{r}
+# How many open issues were there on this date?
+# An issue was open on this date if issue$created > date and 
+# issue$closed < date
+oldest <- min(allbugs$created)
+newest <- max(allbugs$created)
+jump <- 15
+unresolved <- data.frame(
+  date = seq.Date(oldest, newest, jump))
+unresolved <- cbind(unresolved, data.frame(
+  open = vapply(unresolved$date, function(date) {
+    length(which(allbugs$created < date & 
+                   (is.na(allbugs$closed) | allbugs$closed > date)))
+  }, 0)
+))
 
+ggplot(unresolved,
+       aes(x = unresolved$date, y = unresolved$open)) +
+  geom_col() + 
+  xlab("Date") +
+  ylab("Total unresolved") +
+  ggtitle("Unresolved issues") 
+```
+
+```{r}
+ggplot(allbugs[allbugs$age > 2, ], aes(x = as.numeric(age))) +
+  geom_histogram(na.rm = TRUE, binwidth = 10) +
+  xlab("Number of days") +
+  ylab("Issues closed") + 
+  ggtitle("Time to close issues") 
 ```
 
 
+```{r}
+oldbugs <- allbugs[allbugs$state == "open", ]
+ggplot(oldbugs, 
+       aes(x = (Sys.Date() - oldbugs$created), fill = type)) +
+  geom_histogram(na.rm = TRUE, binwidth = 10) +
+  xlab("Number of days") +
+  ylab("Issues open") + 
+  ggtitle("Age of open issues") 
+```

@@ -42,3 +42,12 @@ extract_gh_pr <- function(issue, field) {
     pr$url 
 }
 
+extract_gh_type <- function(issue, field) {
+  labels <- unlist(lapply(issue[[field]], `[[`, "name"))
+  if ("bug" %in% labels)
+    "bug"
+  else if ("enhancement" %in% labels)
+    "enhancement"
+  else
+    "other"
+}
